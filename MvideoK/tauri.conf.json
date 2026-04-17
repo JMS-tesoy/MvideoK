@@ -1,0 +1,64 @@
+{
+  "build": {
+    "beforeBuildCommand": "",
+    "beforeDevCommand": "",
+    "devPath": "../",
+    "frontendDist": "../",
+    "features": []
+  },
+  "app": {
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 720,
+        "resizable": true,
+        "title": "Videoke Player",
+        "width": 1280,
+        "minHeight": 600,
+        "minWidth": 800,
+        "decorations": true,
+        "transparent": false,
+        "alwaysOnTop": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "package": {
+    "productName": "Videoke Player",
+    "version": "1.0.0",
+    "identifier": "com.videokeplayer.app",
+    "description": "Lightweight offline media player for low-spec PCs",
+    "build": {
+      "resources": [
+        "index.html",
+        "styles.css",
+        "app.js"
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "msi",
+      "nsis"
+    ],
+    "nsis": {
+      "installerIcon": null,
+      "uninstallerIcon": null,
+      "headerIcon": null,
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "signingIdentity": null,
+      "timestampUrl": ""
+    },
+    "msi": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "signingIdentity": null,
+      "timestampUrl": ""
+    },
+    "icon": []
+  }
+}

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Videoke Player - Offline Media Manager</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-left">
+        <h1 class="app-title">🎵 Videoke Player</h1>
+        <span class="subtitle">Offline Media Manager</span>
+      </div>
+      
+      <div class="mode-selector">
+        <button class="mode-btn active" data-mode="videoke" title="Karaoke songs">
+          <span class="mode-icon">🎤</span>
+          <span class="mode-label">Videoke</span>
+        </button>
+        <button class="mode-btn" data-mode="movie" title="Movies & Videos">
+          <span class="mode-icon">🎬</span>
+          <span class="mode-label">Movies</span>
+        </button>
+        <button class="mode-btn" data-mode="dj" title="DJ Music Mixing">
+          <span class="mode-icon">🎧</span>
+          <span class="mode-label">DJ</span>
+        </button>
+      </div>
+
+      <div class="header-right">
+        <button class="icon-btn" id="settings-btn" title="Settings">⚙️</button>
+        <button class="icon-btn" id="info-btn" title="About">ℹ️</button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">📂 FOLDERS</h3>
+          <nav class="folder-list">
+            <button class="folder-item active" data-folder="C:" data-drive="C">
+              <span class="folder-icon">💾</span>
+              <span class="folder-name">C: Drive</span>
+            </button>
+            <button class="folder-item" data-folder="D:" data-drive="D">
+              <span class="folder-icon">💾</span>
+              <span class="folder-name">D: Drive</span>
+            </button>
+            <button class="folder-item" data-folder="E:" data-drive="E">
+              <span class="folder-icon">💾</span>
+              <span class="folder-name">E: Drive</span>
+            </button>
+            <button class="folder-item" data-folder="USB" data-drive="USB">
+              <span class="folder-icon">🔌</span>
+              <span class="folder-name">USB Drive</span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">⭐ QUICK ACCESS</h3>
+          <nav class="folder-list">
+            <button class="folder-item" data-folder="recents">
+              <span class="folder-icon">⏱️</span>
+              <span class="folder-name">Recently Played</span>
+            </button>
+            <button class="folder-item" data-folder="favorites">
+              <span class="folder-icon">💛</span>
+              <span class="folder-name">Favorites</span>
+            </button>
+            <button class="folder-item" data-folder="playlists">
+              <span class="folder-icon">📋</span>
+              <span class="folder-name">Playlists</span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">🔍 SEARCH</h3>
+          <input 
+            type="text" 
+            id="search-input" 
+            class="search-box" 
+            placeholder="Search by name, artist..."
+            autocomplete="off"
+          >
+        </div>
+
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">📊 STATS</h3>
+          <div class="stats-box">
+            <div class="stat-item">
+              <span class="stat-label">Total Songs</span>
+              <span class="stat-value" id="total-songs">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Total Videos</span>
+              <span class="stat-value" id="total-videos">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">DB Size</span>
+              <span class="stat-value" id="db-size">0 KB</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- MEDIA BROWSER -->
+      <main class="media-browser">
+        <div class="browser-toolbar">
+          <div class="toolbar-left">
+            <span class="current-folder" id="current-folder">C: Drive</span>
+            <span class="file-count" id="file-count">(0 files)</span>
+          </div>
+          
+          <div class="toolbar-right">
+            <select id="sort-select" class="sort-select">
+              <option value="name">Sort: Name</option>
+              <option value="date">Sort: Date Added</option>
+              <option value="duration">Sort: Duration</option>
+              <option value="artist">Sort: Artist</option>
+            </select>
+            
+            <button class="view-btn active" id="grid-view-btn" title="Grid view">
+              <span>⊞</span>
+            </button>
+            <button class="view-btn" id="list-view-btn" title="List view">
+              <span>☰</span>
+            </button>
+            
+            <button class="action-btn" id="refresh-btn" title="Rescan folder">
+              🔄 Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- MEDIA GRID -->
+        <div class="media-grid" id="media-grid">
+          <!-- Media items will be inserted here via JS -->
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div class="empty-state" id="empty-state" style="display: none;">
+          <div class="empty-icon">📭</div>
+          <h2>No media found</h2>
+          <p>Click a folder or search to browse media files</p>
+        </div>
+
+        <!-- LOADING STATE -->
+        <div class="loading-state" id="loading-state" style="display: none;">
+          <div class="spinner"></div>
+          <p>Scanning folder...</p>
+        </div>
+      </main>
+    </div>
+
+    <!-- NOW PLAYING BAR -->
+    <footer class="player-bar">
+      <div class="now-playing-info">
+        <div class="np-thumbnail" id="np-thumbnail">🎵</div>
+        <div class="np-details">
+          <div class="np-title" id="np-title">No track playing</div>
+          <div class="np-meta" id="np-meta">
+            <span class="np-artist">Unknown Artist</span>
+            <span class="np-duration">0:00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <span class="time-current" id="time-current">0:00</span>
+        <div class="progress-track" id="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+          <input 
+            type="range" 
+            class="progress-slider" 
+            id="progress-slider" 
+            min="0" 
+            max="100" 
+            value="0"
+          >
+        </div>
+        <span class="time-total" id="time-total">0:00</span>
+      </div>
+
+      <div class="player-controls">
+        <button class="control-btn" id="shuffle-btn" title="Shuffle">
+          <span>🔀</span>
+        </button>
+        <button class="control-btn" id="prev-btn" title="Previous track">
+          <span>⏮</span>
+        </button>
+        <button class="control-btn play-btn" id="play-btn" title="Play/Pause">
+          <span id="play-icon">▶</span>
+        </button>
+        <button class="control-btn" id="next-btn" title="Next track">
+          <span>⏭</span>
+        </button>
+        <button class="control-btn" id="repeat-btn" title="Repeat mode">
+          <span>🔁</span>
+        </button>
+      </div>
+
+      <div class="player-side">
+        <button class="control-btn" id="volume-btn" title="Volume">
+          <span>🔊</span>
+        </button>
+        <input 
+          type="range" 
+          class="volume-slider" 
+          id="volume-slider" 
+          min="0" 
+          max="100" 
+          value="80"
+        >
+        <button class="control-btn" id="queue-btn" title="Queue">
+          <span>📋</span>
+        </button>
+        <button class="control-btn" id="fav-btn" title="Add to favorites">
+          <span>☆</span>
+        </button>
+      </div>
+    </footer>
+
+    <!-- QUEUE PANEL -->
+    <div class="queue-panel" id="queue-panel">
+      <div class="queue-header">
+        <h2>Queue</h2>
+        <button class="close-btn" id="queue-close">✕</button>
+      </div>
+      <div class="queue-list" id="queue-list">
+        <!-- Queue items will be inserted here -->
+      </div>
+    </div>
+
+    <!-- MODAL OVERLAYS -->
+    <div class="modal-overlay" id="modal-overlay"></div>
+
+    <!-- SETTINGS MODAL -->
+    <div class="modal" id="settings-modal">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="close-btn" onclick="closeModal('settings-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <section class="settings-section">
+          <h3>Appearance</h3>
+          <label class="setting-item">
+            <input type="checkbox" id="dark-mode-toggle" checked>
+            <span>Dark Theme</span>
+          </label>
+          <label class="setting-item">
+            <input type="checkbox" id="mini-ui-toggle">
+            <span>Compact UI</span>
+          </label>
+        </section>
+
+        <section class="settings-section">
+          <h3>Playback</h3>
+          <label class="setting-item">
+            <input type="checkbox" id="autoplay-toggle" checked>
+            <span>Auto-play next</span>
+          </label>
+          <label class="setting-item">
+            <input type="checkbox" id="remember-position-toggle" checked>
+            <span>Remember playback position</span>
+          </label>
+        </section>
+
+        <section class="settings-section">
+          <h3>Folders</h3>
+          <button class="action-btn full-width">
+            📂 Add Custom Folder
+          </button>
+          <button class="action-btn full-width secondary">
+            🗑️ Clear Database
+          </button>
+        </section>
+
+        <section class="settings-section">
+          <h3>About</h3>
+          <div class="about-info">
+            <p><strong>Videoke Player v1.0</strong></p>
+            <p>Lightweight offline media manager for low-spec PCs</p>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
+              Made for videoke rentals, home entertainment, and DJ mixing
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
