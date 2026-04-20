@@ -17,6 +17,7 @@ const APP_STATE = {
   volume: 80,
   queue: [],
   mediaLibrary: [],
+  recentTrackIds: [],
   searchTerm: '',
   sortBy: 'name',
 };
@@ -89,6 +90,7 @@ const DOM = {
   currentFolderEl: document.getElementById('current-folder'),
   fileCountEl: document.getElementById('file-count'),
   sortSelect: document.getElementById('sort-select'),
+  refreshBtn: document.getElementById('refresh-btn'),
   
   // Player
   npTitle: document.getElementById('np-title'),
@@ -120,6 +122,7 @@ const DOM = {
   
   // Modals
   settingsBtn: document.getElementById('settings-btn'),
+  infoBtn: document.getElementById('info-btn'),
   settingsModal: document.getElementById('settings-modal'),
   modalOverlay: document.getElementById('modal-overlay'),
   darkModeToggle: document.getElementById('dark-mode-toggle'),
@@ -167,39 +170,45 @@ function bindEventListeners() {
   });
   
   // Search
-  DOM.searchInput.addEventListener('input', (e) => {
-    APP_STATE.searchTerm = e.target.value.toLowerCase();
-    renderMediaGrid(filterMedia(APP_STATE.mediaLibrary));
-  });
+  if (DOM.searchInput) {
+    DOM.searchInput.addEventListener('input', (e) => {
+      APP_STATE.searchTerm = e.target.value.toLowerCase();
+      renderMediaGrid(filterMedia(APP_STATE.mediaLibrary));
+    });
+  }
   
   // Sort
-  DOM.sortSelect.addEventListener('change', (e) => {
-    APP_STATE.sortBy = e.target.value;
-    renderMediaGrid(filterMedia(APP_STATE.mediaLibrary));
-  });
+  if (DOM.sortSelect) {
+    DOM.sortSelect.addEventListener('change', (e) => {
+      APP_STATE.sortBy = e.target.value;
+      renderMediaGrid(filterMedia(APP_STATE.mediaLibrary));
+    });
+  }
   
   // Player controls
-  DOM.playBtn.addEventListener('click', togglePlay);
-  DOM.prevBtn.addEventListener('click', previousTrack);
-  DOM.nextBtn.addEventListener('click', nextTrack);
-  DOM.shuffleBtn.addEventListener('click', toggleShuffle);
-  DOM.repeatBtn.addEventListener('click', toggleRepeat);
-  DOM.favBtn.addEventListener('click', toggleFavorite);
+  DOM.playBtn?.addEventListener('click', togglePlay);
+  DOM.prevBtn?.addEventListener('click', previousTrack);
+  DOM.nextBtn?.addEventListener('click', nextTrack);
+  DOM.shuffleBtn?.addEventListener('click', toggleShuffle);
+  DOM.repeatBtn?.addEventListener('click', toggleRepeat);
+  DOM.favBtn?.addEventListener('click', toggleFavorite);
   
   // Progress
-  DOM.progressSlider.addEventListener('input', seekTrack);
+  DOM.progressSlider?.addEventListener('input', seekTrack);
   
   // Volume
-  DOM.volumeSlider.addEventListener('input', changeVolume);
+  DOM.volumeSlider?.addEventListener('input', changeVolume);
   
   // Queue
-  DOM.queueBtn.addEventListener('click', toggleQueue);
-  DOM.queueClose.addEventListener('click', toggleQueue);
-  DOM.modalOverlay.addEventListener('click', closeAllModals);
+  DOM.queueBtn?.addEventListener('click', toggleQueue);
+  DOM.queueClose?.addEventListener('click', toggleQueue);
+  DOM.modalOverlay?.addEventListener('click', closeAllModals);
   
   // Settings
-  DOM.settingsBtn.addEventListener('click', () => openModal('settings-modal'));
-  DOM.darkModeToggle.addEventListener('change', toggleDarkMode);
+  DOM.settingsBtn?.addEventListener('click', () => openModal('settings-modal'));
+  DOM.darkModeToggle?.addEventListener('change', toggleDarkMode);
+  DOM.infoBtn?.addEventListener('click', () => openModal('settings-modal'));
+  DOM.refreshBtn?.addEventListener('click', refreshLibraryView);
 }
 
 // ============================================================================
@@ -234,7 +243,8 @@ function selectFolder(btn) {
   
   // Update current folder
   APP_STATE.currentFolder = btn.dataset.folder;
-  DOM.currentFolderEl.textContent = btn.textContent;
+  const folderName = btn.querySelector('.folder-name')?.textContent || btn.textContent.trim();
+  DOM.currentFolderEl.textContent = folderName;
   
   // Show loading state
   showLoadingState();
@@ -259,8 +269,14 @@ function filterMedia(library) {
       if (item.type !== APP_STATE.currentMode) return false;
     }
     
-    // Filter by folder
-    if (item.folder !== APP_STATE.currentFolder && APP_STATE.currentFolder !== 'favorites' && APP_STATE.currentFolder !== 'recents') {
+    // Filter by folder / quick-access virtual folders
+    if (APP_STATE.currentFolder === 'favorites') {
+      if (!item.isFavorite) return false;
+    } else if (APP_STATE.currentFolder === 'recents') {
+      if (!APP_STATE.recentTrackIds.includes(item.id)) return false;
+    } else if (APP_STATE.currentFolder === 'playlists') {
+      return false;
+    } else if (item.folder !== APP_STATE.currentFolder) {
       return false;
     }
     
@@ -292,6 +308,14 @@ function filterMedia(library) {
   });
   
   return filtered;
+}
+
+function refreshLibraryView() {
+  showLoadingState();
+  setTimeout(() => {
+    renderMediaGrid(filterMedia(APP_STATE.mediaLibrary));
+    hideLoadingState();
+  }, 300);
 }
 
 // ============================================================================
@@ -348,6 +372,7 @@ function playMedia(id) {
   
   APP_STATE.currentTrack = track;
   APP_STATE.isPlaying = true;
+  APP_STATE.recentTrackIds = [id, ...APP_STATE.recentTrackIds.filter(trackId => trackId !== id)].slice(0, 50);
   
   updatePlayerInfo();
   renderMediaGrid(filterMedia(APP_STATE.mediaLibrary));
@@ -371,7 +396,9 @@ function togglePlay() {
 }
 
 function updatePlayButton() {
-  DOM.playIcon.textContent = APP_STATE.isPlaying ? '⏸' : '▶';
+  if (DOM.playIcon) {
+    DOM.playIcon.textContent = APP_STATE.isPlaying ? '⏸' : '▶';
+  }
 }
 
 function previousTrack() {
@@ -404,7 +431,7 @@ function nextTrack() {
 
 function toggleShuffle() {
   APP_STATE.isShuffling = !APP_STATE.isShuffling;
-  DOM.shuffleBtn.classList.toggle('active', APP_STATE.isShuffling);
+  DOM.shuffleBtn?.classList.toggle('active', APP_STATE.isShuffling);
   console.log(`🔀 Shuffle: ${APP_STATE.isShuffling ? 'ON' : 'OFF'}`);
 }
 
@@ -412,8 +439,10 @@ function toggleRepeat() {
   APP_STATE.repeatMode = (APP_STATE.repeatMode + 1) % 3;
   
   const repeatStates = ['🔁 Off', '🔁 All', '🔁 One'];
-  DOM.repeatBtn.title = repeatStates[APP_STATE.repeatMode];
-  DOM.repeatBtn.classList.toggle('active', APP_STATE.repeatMode > 0);
+  if (DOM.repeatBtn) {
+    DOM.repeatBtn.title = repeatStates[APP_STATE.repeatMode];
+    DOM.repeatBtn.classList.toggle('active', APP_STATE.repeatMode > 0);
+  }
   
   console.log(`🔁 Repeat: ${repeatStates[APP_STATE.repeatMode]}`);
 }
@@ -422,8 +451,11 @@ function toggleFavorite() {
   if (!APP_STATE.currentTrack) return;
   
   APP_STATE.currentTrack.isFavorite = !APP_STATE.currentTrack.isFavorite;
-  DOM.favBtn.classList.toggle('active', APP_STATE.currentTrack.isFavorite);
-  DOM.favBtn.textContent = APP_STATE.currentTrack.isFavorite ? '★' : '☆';
+  if (DOM.favBtn) {
+    DOM.favBtn.classList.toggle('active', APP_STATE.currentTrack.isFavorite);
+    DOM.favBtn.innerHTML = `<span>${APP_STATE.currentTrack.isFavorite ? '★' : '☆'}</span>`;
+  }
+  renderMediaGrid(filterMedia(APP_STATE.mediaLibrary));
   
   console.log(`💛 Added to favorites: ${APP_STATE.currentTrack.name}`);
 }
@@ -434,13 +466,13 @@ function toggleFavorite() {
 
 function seekTrack(e) {
   const progress = e.target.value;
-  DOM.progressFill.style.width = progress + '%';
-  DOM.timeCurrent.textContent = formatTime((progress / 100) * APP_STATE.currentTrack?.duration || 0);
+  if (DOM.progressFill) DOM.progressFill.style.width = progress + '%';
+  if (DOM.timeCurrent) DOM.timeCurrent.textContent = formatTime((progress / 100) * APP_STATE.currentTrack?.duration || 0);
 }
 
 function changeVolume(e) {
-  APP_STATE.volume = e.target.value;
-  DOM.volumeBtn.classList.toggle('active', APP_STATE.volume > 0);
+  APP_STATE.volume = Number(e.target.value);
+  DOM.volumeBtn?.classList.toggle('active', APP_STATE.volume > 0);
 }
 
 // ============================================================================
@@ -448,13 +480,20 @@ function changeVolume(e) {
 // ============================================================================
 
 function toggleQueue() {
+  if (!DOM.queuePanel) return;
   DOM.queuePanel.classList.toggle('open');
   updateQueue();
 }
 
 function updateQueue() {
   const filtered = filterMedia(APP_STATE.mediaLibrary);
-  
+  if (!DOM.queueList) return;
+
+  if (filtered.length === 0) {
+    DOM.queueList.innerHTML = '<div class="queue-item">Queue is empty</div>';
+    return;
+  }
+
   DOM.queueList.innerHTML = filtered.slice(0, 20).map((item, idx) => `
     <div class="queue-item ${APP_STATE.currentTrack?.id === item.id ? 'playing' : ''}"
          onclick="playMedia('${item.id}')">
@@ -502,9 +541,38 @@ function toggleDarkMode(e) {
 }
 
 function loadSettings() {
+  try {
+    const storedState = localStorage.getItem('appState');
+    if (storedState) {
+      const parsed = JSON.parse(storedState);
+      Object.assign(APP_STATE, {
+        isShuffling: !!parsed.isShuffling,
+        repeatMode: Number(parsed.repeatMode) || 0,
+        volume: Number(parsed.volume) || APP_STATE.volume,
+        currentMode: parsed.currentMode || APP_STATE.currentMode,
+        currentFolder: parsed.currentFolder || APP_STATE.currentFolder,
+        recentTrackIds: Array.isArray(parsed.recentTrackIds) ? parsed.recentTrackIds : [],
+      });
+    }
+  } catch (error) {
+    console.warn('Could not restore saved state:', error);
+  }
+
   const darkMode = localStorage.getItem('darkMode') !== 'false';
-  DOM.darkModeToggle.checked = darkMode;
+  if (DOM.darkModeToggle) DOM.darkModeToggle.checked = darkMode;
   document.documentElement.style.colorScheme = darkMode ? 'dark' : 'light';
+
+  if (DOM.volumeSlider) DOM.volumeSlider.value = APP_STATE.volume;
+  if (DOM.modeBtns) {
+    DOM.modeBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === APP_STATE.currentMode);
+    });
+  }
+  if (DOM.folderItems) {
+    DOM.folderItems.forEach(item => {
+      item.classList.toggle('active', item.dataset.folder === APP_STATE.currentFolder);
+    });
+  }
 }
 
 function saveSettings() {
